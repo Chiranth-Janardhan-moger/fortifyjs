@@ -11,11 +11,13 @@ const SQL_VALUE = `(?:${SQL_FUNCTION_CALL}|\\d+(?:\\.\\d+)?|N?[\'"][^\'"]{0,80}[
 const SQL_CONSTANT_COMPARISON_EXPRESSION = `${SQL_CONSTANT_VALUE}\\s*${SQL_COMPARISON_OPERATOR}\\s*${SQL_CONSTANT_VALUE}`;
 const SQL_COMPARISON_EXPRESSION = `${SQL_VALUE}\\s*${SQL_COMPARISON_OPERATOR}\\s*${SQL_VALUE}`;
 const SQL_BETWEEN_EXPRESSION = `${SQL_VALUE}\\s+BETWEEN\\s+${SQL_VALUE}\\s+AND\\s+${SQL_VALUE}`;
+const SQL_CONSTANT_BETWEEN = `${SQL_CONSTANT_VALUE}\\s+BETWEEN\\s+${SQL_CONSTANT_VALUE}\\s+AND\\s+${SQL_CONSTANT_VALUE}`;
 const SQL_IS_EXPRESSION = `${SQL_VALUE}\\s+IS\\s+(?:NOT\\s+)?NULL`;
+const SQL_CONSTANT_IS = `${SQL_CONSTANT_VALUE}\\s+IS\\s+(?:NOT\\s+)?NULL`;
 const SQL_EXISTS_EXPRESSION = `EXISTS\\s*\\(\\s*SELECT\\b`;
 const SQL_BOOLEAN_LITERAL_EXPRESSION = '(?:TRUE|FALSE|UNKNOWN|NULL)';
 const SQL_BOOLEAN_EXPRESSION = `(?:${SQL_COMPARISON_EXPRESSION}|${SQL_BETWEEN_EXPRESSION}|${SQL_IS_EXPRESSION}|${SQL_EXISTS_EXPRESSION}|${SQL_BOOLEAN_LITERAL_EXPRESSION})`;
-const SQL_CONSTANT_BOOLEAN_EXPRESSION = `(?:${SQL_CONSTANT_COMPARISON_EXPRESSION}|${SQL_BETWEEN_EXPRESSION}|${SQL_IS_EXPRESSION}|${SQL_EXISTS_EXPRESSION}|${SQL_BOOLEAN_LITERAL_EXPRESSION})`;
+const SQL_CONSTANT_BOOLEAN_EXPRESSION = `(?:${SQL_CONSTANT_COMPARISON_EXPRESSION}|${SQL_CONSTANT_BETWEEN}|${SQL_CONSTANT_IS}|${SQL_EXISTS_EXPRESSION}|${SQL_BOOLEAN_LITERAL_EXPRESSION})`;
 const SQL_STACKED_STATEMENT_KEYWORD = '(?:SELECT|WITH|UNION|DROP|INSERT|UPDATE|DELETE|ALTER|CREATE|EXEC|EXECUTE|CALL|MERGE|TRUNCATE)';
 const SQL_METADATA_OBJECT = '(?:information_schema(?:\\.[A-Za-z_][\\w$]*)?|sysobjects|sys\\.(?:tables|columns|objects|databases|schemas|indexes|all_columns)|sqlite_master|sqlite_schema|pg_catalog(?:\\.[A-Za-z_][\\w$]*)?|pg_(?:class|tables|namespace|attribute|database|user)|mysql\\.(?:innodb_table_stats|innodb_index_stats|user|db|tables_priv|columns_priv|proc|tables)|(?:all|user|dba)_(?:tables|tab_columns|objects|users|catalog|constraints|cons_columns|views))';
 const SQL_METADATA_QUERY_CONTEXT = '(?:SELECT|FROM|JOIN|WHERE|COUNT\\s*\\(|EXISTS\\s*\\(|SHOW\\s+(?:FULL\\s+)?(?:TABLES|COLUMNS)|DESCRIBE|DESC)';
@@ -169,14 +171,14 @@ function hasSqlComparison(tokens, start, end, constantOnly = false) {
 }
 
 function hasStrongSqlBreakoutContext(tokens, booleanIndex) {
-  const start = Math.max(0, booleanIndex - 8);
-  for (let i = start; i < booleanIndex; i++) {
+  let quoteCount = 0;
+  for (let i = 0; i < booleanIndex; i++) {
     const token = tokens[i];
-    if (token.type === 'quote') return true;
+    if (token.type === 'quote') quoteCount++;
     if (token.type === 'punct' && [';', ')', '('].includes(token.value)) return true;
     if (token.type === 'operator' && ['||', '&&', '--'].includes(token.value)) return true;
   }
-  return false;
+  return (quoteCount % 2 !== 0);
 }
 
 function rightSideSqlPredicate(tokens, booleanIndex) {
@@ -218,7 +220,6 @@ function hasStructuralSqlBooleanAbuse(value) {
     if (!isSqlBooleanToken(tokens[i])) continue;
     const right = rightSideSqlPredicate(tokens, i);
     if (!right.hasPredicate) continue;
-    if (right.hasConstantPredicate) return true;
     if (hasStrongSqlBreakoutContext(tokens, i)) return true;
   }
   return false;
@@ -354,7 +355,7 @@ module.exports = {
       {
         id: 'boolean-tautology',
         confidence: 0.75,
-        pattern: new RegExp(`['"\`)]\\s*${SQL_BOOLEAN_OPERATOR}\\s+(?:NOT\\s+)?${SQL_BOOLEAN_EXPRESSION}|${SQL_SYMBOL_BOOLEAN_OPERATOR}\\s+(?:NOT\\s+)?${SQL_BOOLEAN_EXPRESSION}|\\b${SQL_WORD_BOOLEAN_OPERATOR}\\b\\s+(?:NOT\\s+)?${SQL_CONSTANT_BOOLEAN_EXPRESSION}|\\b\\d+\\s+\\b${SQL_WORD_BOOLEAN_OPERATOR}\\b\\s+(?:NOT\\s+)?${SQL_CONSTANT_BOOLEAN_EXPRESSION}`, 'i')
+        pattern: new RegExp(`['"\`)]\\s*${SQL_BOOLEAN_OPERATOR}\\s+(?:NOT\\s+)?${SQL_CONSTANT_BOOLEAN_EXPRESSION}|${SQL_SYMBOL_BOOLEAN_OPERATOR}\\s+(?:NOT\\s+)?${SQL_CONSTANT_BOOLEAN_EXPRESSION}|\\b${SQL_WORD_BOOLEAN_OPERATOR}\\b\\s+(?:NOT\\s+)?${SQL_CONSTANT_BOOLEAN_EXPRESSION}|\\b\\d+\\s+\\b${SQL_WORD_BOOLEAN_OPERATOR}\\b\\s+(?:NOT\\s+)?${SQL_CONSTANT_BOOLEAN_EXPRESSION}`, 'i')
       },
       {
         id: 'drop-table',

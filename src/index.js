@@ -8,6 +8,7 @@ const fastifyPlugin = require('./adapters/fastify');
 const { koaMiddleware } = require('./adapters/koa');
 const { honoMiddleware } = require('./adapters/hono');
 const { genericAdapter } = require('./adapters/generic');
+const nextjsAdapter = require('./adapters/nextjs');
 const DEFAULT_THRESHOLD = 0.5;
 
 function samplePayload(sample) {
@@ -126,5 +127,6 @@ module.exports = {
   fastifyPlugin,
   koaMiddleware,
   honoMiddleware,
-  genericAdapter
+  genericAdapter,
+  nextjsAdapter
 };

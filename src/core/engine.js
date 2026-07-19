@@ -19,6 +19,22 @@ const templateInjectionDetector = require('../detectors/template-injection');
 const ldapDetector = require('../detectors/ldap');
 const graphqlDetector = require('../detectors/graphql');
 
+function classifyInputType(payload) {
+  const str = String(payload).trim();
+  const upper = str.toUpperCase();
+  
+  const startsWithSqlKeyword = /^(?:SELECT|INSERT|UPDATE|DELETE|WITH|CREATE|ALTER)\b/.test(upper);
+  
+  // Simple heuristic for quote breakouts
+  const hasUnmatchedQuote = (str.match(/'/g) || []).length % 2 !== 0;
+  const hasCommentBreakout = /'--|'\/\*/.test(str);
+  
+  if (startsWithSqlKeyword && !hasUnmatchedQuote && !hasCommentBreakout) {
+    return 'complete-statement';
+  }
+  return 'fragment';
+}
+
 class DetectionEngine {
   constructor(options = {}) {
     this.options = options;
@@ -73,8 +89,16 @@ class DetectionEngine {
       }
     }
 
+    const classification = classifyInputType(payload);
+    const isQueryMode = this.options.mode === 'query';
+
     for (const detector of activeDetectors) {
-      const matches = matchSignals(variants, detector.getSignals(), detector.label);
+      let signals = detector.getSignals();
+      if (isQueryMode && detector.name === 'sqli') {
+        signals = signals.filter(s => s.id !== 'sql-structural-boolean');
+      }
+
+      const matches = matchSignals(variants, signals, detector.label);
       const confidence = combineConfidence(matches);
       allMatches.push(...matches);
       scores[detector.name] = matches.length;
@@ -102,7 +126,14 @@ class DetectionEngine {
       this.behavioralAnalyzer.incrementRequestCount();
     }
 
-    const totalConfidence = Math.min(1.0, combineConfidence(allMatches));
+    let totalConfidence = Math.min(1.0, combineConfidence(allMatches));
+
+    if (isQueryMode) {
+      if (classification === 'complete-statement') {
+        totalConfidence = totalConfidence * 0.3;
+        maxConfidence = maxConfidence * 0.3;
+      }
+    }
 
     const blockThreshold = this.options.blockThreshold !== undefined ? this.options.blockThreshold : 0.5;
     const minimumSignals = this.options.minimumSignals !== undefined ? this.options.minimumSignals : 1;

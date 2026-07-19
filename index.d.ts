@@ -75,6 +75,7 @@ declare module 'fortifyjs' {
     fileUpload?: boolean | FileUploadOptions;
     dashboard?: boolean | { enabled?: boolean; path?: string };
     whitelist?: WhitelistOptions;
+    mode?: 'input' | 'query';
     logging?: { level?: 'silent' | 'error' | 'warn' | 'info' | 'debug'; format?: 'json' | 'text' };
   }
 

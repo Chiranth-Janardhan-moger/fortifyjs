@@ -7,3 +7,5 @@ scratch/
 types-check.ts
 plan_future.md
 goal_command.md
+__tests__/
+test/
