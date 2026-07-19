@@ -1,0 +1,161 @@
+const { expressMiddleware } = require('../src/index');
+
+describe('Adversarial Bypasses', () => {
+  let mockNext;
+  let mockRes;
+  let middleware;
+
+  beforeEach(() => {
+    mockNext = jest.fn();
+    mockRes = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn()
+    };
+    middleware = expressMiddleware({ threshold: 0.2 });
+  });
+
+  it('should detect double URL-encoded XSS', async () => {
+    const req = {
+      query: { q: '%253Cscript%253Ealert(1)%253C%252Fscript%253E' }
+    };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect Base64 encoded XSS', async () => {
+    const req = {
+      body: { data: 'PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==' }
+    };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect SQLi obfuscated with inline comments', async () => {
+    const req = {
+      body: 'UN/**/ION SEL/**/ECT * FROM users'
+    };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect mixed encoding obfuscation in headers', async () => {
+    const req = {
+      headers: {
+        'x-forwarded-for': '127.0.0.1, %55%4e%49%4f%4e%20%53%45%4c%45%43%54' // UNION SELECT url encoded
+      }
+    };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect attribute injection without wrapping tag', async () => {
+    const req = {
+      query: { q: 'onmouseover="alert(1)' }
+    };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect SQL block comment breakout probes', async () => {
+    const req = {
+      body: { username: "admin'/*" }
+    };
+
+    await middleware(req, mockRes, mockNext);
+
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect union values extraction probes', async () => {
+    const req = {
+      query: { q: "%' UNION VALUES(1, (SELECT flag_value FROM flags))/*" }
+    };
+
+    await middleware(req, mockRes, mockNext);
+
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect payloads hidden beyond the scan prefix', async () => {
+    const req = {
+      body: {
+        username: `fake_user'${' '.repeat(50000)} UNION SELECT 1, flag_value, 'dummy', 'dummy' FROM flags--`
+      }
+    };
+
+    await middleware(req, mockRes, mockNext);
+
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  // Extra SQLi Tests
+  it('should detect boolean-based blind SQLi via arithmetic', async () => {
+    const req = { query: { q: 'id=1 AND 1234=1234' } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  it('should detect time-based SQLi with pg_sleep', async () => {
+    const req = { query: { q: "id=1; SELECT pg_sleep(5)--" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect SQLi with multiple nested functions', async () => {
+    const req = { query: { q: "UNION SELECT CONCAT(CHAR(114), CHAR(111))" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect blind SQLi with substring extraction', async () => {
+    const req = { query: { q: "AND SUBSTRING(@@version,1,1)='5'" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect WAF bypass with mixed casing', async () => {
+    const req = { query: { q: "uNiOn sElEcT 1,2,3" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+
+  it('should detect SQL injection with backticks', async () => {
+    const req = { query: { q: "`username`='admin' OR 1=1" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect stacked queries', async () => {
+    const req = { query: { q: "1; DROP TABLE users" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+
+  // Extra XSS Tests
+  it('should detect XSS in javascript: pseudo-protocol', async () => {
+    const req = { query: { q: "javascript:alert(document.cookie)" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect XSS via SVG animation tags', async () => {
+    const req = { query: { q: "<svg><animate onbegin=alert(1)>" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect XSS via body onload', async () => {
+    const req = { query: { q: "<body onload=prompt(1)>" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect polyglot XSS', async () => {
+    const req = { query: { q: "jaVasCript:/*-/*`/*\\`/*'/*\"/**/(/* */oNcliCk=alert() )//%0D%0A%0d%0a//</stYle/</titLe/</teXtarEa/</scRipt/--!>\\x3csVg/<sVg/oNloAd=alert()//>\\x3e" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+  it('should detect DOM-based XSS probe payload', async () => {
+    const req = { query: { q: "\"><img src=x onerror=console.log(1)>" } };
+    await middleware(req, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(403);
+  });
+});
+
+
+
+

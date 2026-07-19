@@ -1,0 +1,70 @@
+{
+  "name": "fortifyjs",
+  "version": "1.1.0",
+  "description": "Complete web application firewall for Node.js. One-line protection against injection, XSS, CSRF, SSRF, and 10+ attack classes. Replaces helmet, cors, csurf, and express-rate-limit.",
+  "main": "src/index.js",
+  "types": "index.d.ts",
+  "bin": {
+    "fortifyjs": "bin/fortifyjs.js"
+  },
+  "keywords": [
+    "waf",
+    "firewall",
+    "security",
+    "middleware",
+    "sql-injection",
+    "xss",
+    "csrf",
+    "cors",
+    "ssrf",
+    "nosql-injection",
+    "command-injection",
+    "xxe",
+    "helmet",
+    "rate-limit",
+    "bot-detection",
+    "path-traversal",
+    "prototype-pollution",
+    "express",
+    "fastify",
+    "koa",
+    "hono",
+    "nestjs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Chiranth-Janardhan-moger/fortifyjs.git"
+  },
+  "license": "MIT",
+  "files": [
+    "bin",
+    "src",
+    "examples",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "test": "jest",
+    "benchmark": "node benchmarks/detection-speed.js && node benchmarks/throughput.js"
+  },
+  "devDependencies": {
+    "express": "^5.2.1",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "express": ">=4.18.0 || >=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/Chiranth-Janardhan-moger/fortifyjs/issues"
+  },
+  "homepage": "https://github.com/Chiranth-Janardhan-moger/fortifyjs#readme"
+}

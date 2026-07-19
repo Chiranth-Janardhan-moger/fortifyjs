@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+*.tgz
+.env
+.DS_Store
+scratch/
+types-check.ts
+plan_future.md
+goal_command.md
