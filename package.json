@@ -1,5 +1,5 @@
 {
-  "name": "fortifyjs",
+  "name": "@chiranthmoger/fortifyjs",
   "version": "1.1.0",
   "description": "Complete web application firewall for Node.js. One-line protection against injection, XSS, CSRF, SSRF, and 10+ attack classes. Replaces helmet, cors, csurf, and express-rate-limit.",
   "main": "src/index.js",
