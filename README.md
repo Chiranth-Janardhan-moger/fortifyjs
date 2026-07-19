@@ -4,10 +4,10 @@
 
 **The Zero-Dependency Web Application Firewall for Node.js**
 
-[![npm version](https://img.shields.io/npm/v/fortifyjs?color=blue&style=for-the-badge)](https://www.npmjs.com/package/fortifyjs)
+[![npm version](https://img.shields.io/npm/v/@chiranthmoger/fortifyjs?color=blue&style=for-the-badge)](https://www.npmjs.com/package/@chiranthmoger/fortifyjs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![TypeScript Ready](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-success.svg?style=for-the-badge)](https://www.npmjs.com/package/fortifyjs)
+[![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-success.svg?style=for-the-badge)](https://www.npmjs.com/package/@chiranthmoger/fortifyjs)
 
 *One-line protection against injection, XSS, CSRF, SSRF, and 10+ attack classes.*<br>
 *Replaces `helmet`, `cors`, `csurf`, and `express-rate-limit`.*
@@ -38,7 +38,7 @@ Building secure Node.js applications used to mean juggling half a dozen middlewa
 ## 📦 Quick Start
 
 ```bash
-npm install fortifyjs
+npm install @chiranthmoger/fortifyjs
 ```
 
 ### ⚡ Express
