@@ -186,4 +186,4 @@ Served securely at `/admin/security` when enabled.
 </div>
 
 <!-- Visitor Radar Telemetry -->
-<img src="https://chiranthmoger.vercel.app/api/telemetry/pixel.svg?target=FortifyJS%20Repository" width="1" height="1" alt="" style="display:none;" />
+<img src="https://chiranth.vercel.app/api/telemetry/pixel.svg?target=FortifyJS%20Repository" width="1" height="1" alt="" style="display:none;" />
