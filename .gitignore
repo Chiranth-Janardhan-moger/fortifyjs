@@ -12,5 +12,4 @@ __tests__/
 test/
 test-*.js
 verify-claims.js
-fortify-dashboard/node_modules/
-fortify-dashboard/.next/
+fortify-dashboard/
