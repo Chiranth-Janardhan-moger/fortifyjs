@@ -1,6 +1,6 @@
 'use strict';
 
-const JS_EXECUTION_SINKS = new Set(['alert', 'confirm', 'prompt', 'eval', 'fetch', 'function', 'settimeout', 'setinterval']);
+const JS_EXECUTION_SINKS = new Set(['alert', 'confirm', 'prompt', 'eval', 'fetch', 'function', 'settimeout', 'setinterval', 'location', 'navigate', 'assign', 'replace', 'write', 'writeln']);
 const JS_GLOBAL_OBJECTS = new Set(['window', 'globalthis', 'self', 'top', 'parent']);
 function isAsciiLetter(ch) {
   return /[A-Za-z]/.test(ch);
@@ -105,7 +105,7 @@ module.exports = {
   name: 'xss',
   label: 'xss',
   getSignals() {
-    return     [
+    return [
       {
         id: 'script-tag',
         confidence: 0.85,
@@ -119,7 +119,12 @@ module.exports = {
       {
         id: 'event-handler-payload',
         confidence: 0.75,
-        pattern: /\bon\w+\s*=\s*["']?[^"'>]*(?:alert|confirm|prompt|document\.|window\.|eval|fetch|Function\s*\()/i
+        pattern: /\bon\w+\s*=\s*(?:["'][^"'>]*|[^"'\s>]*)(?:(?:alert|confirm|prompt|eval|fetch|location|write)\s*\(|(?:window|globalThis|self|top|parent|document)(?:\.|\[)|Function\s*\()/i
+      },
+      {
+        id: 'js-bracket-execution-sink',
+        confidence: 0.75,
+        pattern: /(?:window|globalThis|self|top|parent|document)\s*\[\s*['"][^'"]+['"]\s*\]\s*(?:\(|=)/i
       },
       {
         id: 'javascript-url-with-sink',

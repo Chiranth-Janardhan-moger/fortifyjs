@@ -1,4 +1,6 @@
 'use strict';
+const { MemoryStore } = require('./store');
+
 class IPRateLimiter {
   constructor(windowMs = 300000, maxCapacity = 10000, maxEventsPerKey = 1000) {
     this.windowMs = Number.isFinite(windowMs) && windowMs > 0 ? windowMs : 300000;
@@ -41,30 +43,70 @@ class IPRateLimiter {
     this.ips.set(ip, validTimestamps);
     return validTimestamps.length;
   }
-
 }
 
 function rateLimiterFactory(options = {}) {
   const windowMs = options.windowMs || 15 * 60 * 1000;
   const max = options.max || 100;
-  const limiter = new IPRateLimiter(windowMs, 10000, max);
+  const keyGenerator = options.keyGenerator || (req => req.ip || (req.connection && req.connection.remoteAddress) || (req.socket && req.socket.remoteAddress) || '127.0.0.1');
+  const standardHeaders = options.standardHeaders !== false;
+  const customStore = options.store;
+  const memoryStore = customStore || new MemoryStore({ cleanupIntervalMs: windowMs });
+  const localLimiter = new IPRateLimiter(windowMs, 10000, max + 1000);
   
-  return function rateLimitMiddleware(req, res, next) {
-    const ip = req.ip || (req.connection && req.connection.remoteAddress) || 'unknown';
-    const currentHits = limiter.recordSuspicious(ip);
+  return async function rateLimitMiddleware(req, res, next) {
+    const key = keyGenerator(req);
     
-    if (currentHits >= max) {
-      if (res.status && res.json) {
-        res.status(429).json({ error: 'Too many requests' });
-      } else {
-        // Fallback for non-Express adapters if needed
-        res.statusCode = 429;
-        res.end(JSON.stringify({ error: 'Too many requests' }));
+    if (customStore) {
+      try {
+        const { count, resetTime } = await customStore.increment(key, windowMs);
+        const remaining = Math.max(0, max - count);
+        
+        if (standardHeaders && res.setHeader) {
+          res.setHeader('RateLimit-Limit', max);
+          res.setHeader('RateLimit-Remaining', remaining);
+          res.setHeader('RateLimit-Reset', Math.ceil(resetTime / 1000));
+        }
+
+        if (count > max) {
+          if (typeof options.handler === 'function') {
+            return options.handler(req, res, next, options);
+          }
+          if (res.status && res.json) {
+            return res.status(429).json({ error: 'Too many requests', retryAfter: Math.ceil((resetTime - Date.now()) / 1000) });
+          } else {
+            res.statusCode = 429;
+            return res.end(JSON.stringify({ error: 'Too many requests' }));
+          }
+        }
+        return next();
+      } catch (err) {
+        // Fail open if store fails, or proceed with fallback
       }
-      return;
+    }
+
+    // Default synchronous in-memory tracking
+    const currentHits = localLimiter.recordSuspicious(key);
+    const remaining = Math.max(0, max - currentHits);
+    
+    if (standardHeaders && res.setHeader) {
+      res.setHeader('RateLimit-Limit', max);
+      res.setHeader('RateLimit-Remaining', remaining);
+    }
+    
+    if (currentHits > max) {
+      if (typeof options.handler === 'function') {
+        return options.handler(req, res, next, options);
+      }
+      if (res.status && res.json) {
+        return res.status(429).json({ error: 'Too many requests' });
+      } else {
+        res.statusCode = 429;
+        return res.end(JSON.stringify({ error: 'Too many requests' }));
+      }
     }
     next();
   };
 }
 
-module.exports = { IPRateLimiter, rateLimiterFactory };
+module.exports = { IPRateLimiter, rateLimiterFactory, MemoryStore };

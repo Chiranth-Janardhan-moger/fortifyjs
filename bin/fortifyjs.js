@@ -6,13 +6,13 @@ const readline = require('readline');
 const util = require('util');
 const { DetectionEngine } = require('../src/index');
 
+const { banner } = require('./banner');
+
 const MAX_CLI_PAYLOAD_LENGTH = 50000;
 
 function printHelp() {
-  console.log(`
-fortifyjs (Heuristic Scanner)
-
-Usage:
+  console.log(banner);
+  console.log(`Usage:
   fortifyjs scan <payload>              - Scan a single payload
   fortifyjs scan-file <filepath>        - Scan a file with one payload per line
   

@@ -36,9 +36,19 @@ module.exports = {
   getSignals() {
     return [
       {
+        id: 'proto-key-exact',
+        confidence: 0.90,
+        pattern: /^(?:__proto__|prototype)$/i
+      },
+      {
+        id: 'constructor-key-exact',
+        confidence: 0.70,
+        pattern: /^constructor$/i
+      },
+      {
         id: 'proto-key',
         confidence: 0.90,
-        pattern: /"__proto__"\s*:/
+        pattern: /(?:"|')?__proto__(?:"|')?\s*[:=]/i
       },
       {
         id: 'constructor-prototype',
@@ -48,7 +58,7 @@ module.exports = {
       {
         id: 'constructor-key',
         confidence: 0.70,
-        pattern: /"constructor"\s*:/
+        pattern: /(?:"|')?constructor(?:"|')?\s*[:=]/i
       },
       {
         id: 'proto-in-url',

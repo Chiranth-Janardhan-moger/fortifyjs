@@ -12,7 +12,7 @@ module.exports = {
       {
         id: 'ssti-dangerous-sink',
         confidence: 0.90,
-        pattern: new RegExp('(?:{{|\\\\$\\\\{|<%=\\s*|#{\\s*)[^}]*?' + DANGEROUS_SINKS + '.*?(?:}}|}|%>|})', 'i')
+        pattern: new RegExp('(?:{{|\\$\\{|<%=\\s*|#{\\s*)[^}]*?' + DANGEROUS_SINKS + '.*?(?:}}|}|%>|})', 'i')
       },
       {
         id: 'ssti-jinja-dangerous',
@@ -22,7 +22,7 @@ module.exports = {
       {
         id: 'ssti-arithmetic-probe',
         confidence: 0.70,
-        pattern: new RegExp('(?:{{|\\\\$\\\\{|<%=\\s*|#{\\s*).*?' + ARITHMETIC + '.*?(?:}}|}|%>|})')
+        pattern: new RegExp('(?:{{|\\$\\{|<%=\\s*|#{\\s*).*?' + ARITHMETIC + '.*?(?:}}|}|%>|})')
       },
       {
         id: 'ssti-template-syntax-alone',

@@ -8,32 +8,42 @@ module.exports = {
       {
         id: 'dot-dot-slash',
         confidence: 0.75,
-        pattern: /(?:\.\.[\\\/]){2,}/
+        pattern: /(?:\.\.[\\\/])+/
       },
       {
         id: 'windows-backslash-traversal',
         confidence: 0.75,
-        pattern: /(?:\.\.\\){2,}/
+        pattern: /(?:\.\.\\)+/
       },
       {
         id: 'url-encoded-traversal',
         confidence: 0.80,
-        pattern: /(?:%2e%2e%2f|%252e%252e%252f|%2e%2e%5c|%252e%252e%255c){2,}/i
+        pattern: /(?:%2e%2e%2f|%252e%252e%252f|%2e%2e%5c|%252e%252e%255c)+/i
       },
       {
         id: 'overlong-utf8-traversal',
         confidence: 0.85,
-        pattern: /(?:%c0%ae%c0%ae%c0%af|%e0%40%ae%e0%40%ae%e0%40%af){2,}/i
+        pattern: /(?:%c0%ae%c0%ae%c0%af|%e0%40%ae%e0%40%ae%e0%40%af)+/i
       },
       {
         id: 'double-dot-slash',
         confidence: 0.75,
-        pattern: /(?:\.\.\.\.\/\/)+/
+        pattern: /(?:\.{2,}[\\\/]+)+/
       },
       {
         id: 'null-byte-injection',
         confidence: 0.85,
-        pattern: /\x00/
+        pattern: /\x00|%00/i
+      },
+      {
+        id: 'ntfs-alternate-data-stream',
+        confidence: 0.85,
+        pattern: /::\$DATA\b/i
+      },
+      {
+        id: 'windows-unc-path',
+        confidence: 0.80,
+        pattern: /(?:^|[\\\/])\\\\\?\\/
       },
       {
         id: 'sensitive-unix-file',
@@ -43,7 +53,7 @@ module.exports = {
       {
         id: 'sensitive-windows-file',
         confidence: 0.80,
-        pattern: /(?:\\SAM|\\boot\.ini|\\win\.ini|\\system32\\config)/i
+        pattern: /(?:\\SAM|\\boot\.ini|\\win\.ini|[\\\/]system32(?:[\\\/]|$))/i
       },
       {
         id: 'dotfile-access',

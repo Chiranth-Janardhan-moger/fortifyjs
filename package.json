@@ -1,7 +1,7 @@
 {
   "name": "@chiranthmoger/fortifyjs",
-  "version": "1.1.1",
-  "description": "Complete web application firewall for Node.js. One-line protection against injection, XSS, CSRF, SSRF, and 10+ attack classes. Replaces helmet, cors, csurf, and express-rate-limit.",
+  "version": "1.1.2",
+  "description": "Zero-dependency Web Application Firewall and AI Security Suite for Node.js. One-line protection against injection, XSS, CSRF, SSRF, prompt injection, and 15 attack classes. Replaces helmet, cors, csurf, and express-rate-limit.",
   "main": "src/index.js",
   "types": "index.d.ts",
   "bin": {
@@ -43,6 +43,7 @@
     "index.d.ts"
   ],
   "scripts": {
+    "postinstall": "node bin/banner.js",
     "test": "jest",
     "benchmark": "node benchmarks/detection-speed.js && node benchmarks/throughput.js"
   },

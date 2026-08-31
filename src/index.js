@@ -1,5 +1,5 @@
 'use strict';
-const { shield } = require('./presets');
+const { shield, PRESETS } = require('./presets');
 const { DetectionEngine } = require('./core/engine');
 const { Normalizer } = require('./core/normalizer');
 const { expressMiddleware, fortifyjs, secureRouter } = require('./adapters/express');
@@ -9,6 +9,22 @@ const { koaMiddleware } = require('./adapters/koa');
 const { honoMiddleware } = require('./adapters/hono');
 const { genericAdapter } = require('./adapters/generic');
 const nextjsAdapter = require('./adapters/nextjs');
+const {
+  FortifySinkError,
+  FortifyPromptError,
+  assertSafeCommand,
+  assertSafePath,
+  assertSafeUrl,
+  assertSafeNoSql,
+  assertSafeRedirect,
+  assertSafePrompt,
+  scanPrompt
+} = require('./core/sinks');
+const { llmGuard } = require('./shields/llm-guard');
+const { sanitizerFactory, sanitizeObject } = require('./shields/sanitizer');
+const { isPrivateIP } = require('./detectors/ssrf');
+const { MemoryStore, BaseStore } = require('./shields/store');
+
 const DEFAULT_THRESHOLD = 0.5;
 
 function samplePayload(sample) {
@@ -57,6 +73,7 @@ function assertSafeSqlQuery(query, options = {}) {
   }
   return result;
 }
+
 function evaluatePayloads(samples, options = {}) {
   if (!Array.isArray(samples)) {
     throw new TypeError('samples must be an array');
@@ -112,10 +129,13 @@ function evaluatePayloads(samples, options = {}) {
 
 module.exports = {
   shield,
+  PRESETS,
   DetectionEngine,
   Normalizer,
   evaluatePayloads,
   fortifyjsQueryError,
+  FortifySinkError,
+  FortifyPromptError,
   expressMiddleware,
   createNestMiddleware,
   fortifyjs,
@@ -123,7 +143,19 @@ module.exports = {
   nestjsMiddleware,
   scanSqlQuery,
   assertSafeSqlQuery,
-  evaluatePayloads,
+  assertSafeCommand,
+  assertSafePath,
+  assertSafeUrl,
+  assertSafeNoSql,
+  assertSafeRedirect,
+  assertSafePrompt,
+  scanPrompt,
+  llmGuard,
+  sanitizerFactory,
+  sanitizeObject,
+  isPrivateIP,
+  MemoryStore,
+  BaseStore,
   fastifyPlugin,
   koaMiddleware,
   honoMiddleware,

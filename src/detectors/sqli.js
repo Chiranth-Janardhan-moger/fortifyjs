@@ -441,6 +441,16 @@ module.exports = {
         id: 'sql-structural-metadata-query',
         confidence: 0.65,
         test: hasStructuralSqlMetadataQuery
+      },
+      {
+        id: 'case-when-conditional',
+        confidence: 0.70,
+        pattern: /\bCASE\s+WHEN\s+\(?\s*\d+\s*[=<>!]+\s*\d+\s*\)?\s+THEN\b/i
+      },
+      {
+        id: 'select-case-expression',
+        confidence: 0.70,
+        pattern: /\(\s*SELECT\s+CASE\s+WHEN\b/i
       }
     ];
   }

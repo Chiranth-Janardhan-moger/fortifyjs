@@ -1,12 +1,17 @@
 'use strict';
 
-const DANGEROUS_COMMANDS = 'rm|cat|wget|curl|nc|bash|sh|cmd|powershell|python|perl|ruby|node|php';
+const DANGEROUS_COMMANDS = 'rm|cat|wget|curl|nc|bash|sh|cmd|powershell|python|perl|ruby|node|php|id|whoami|ls|uname|hostname|awk|sed|find|socat|ncat|xargs|dd|env|tee|echo|chmod|chown|kill|pkill|touch|mv|cp|tar|zip|unzip';
 
 module.exports = {
   name: 'cmdi',
   label: 'cmdi',
   getSignals() {
     return [
+      {
+        id: 'destructive-command',
+        confidence: 0.85,
+        pattern: /\b(?:rm\s+-[rf]+|mkfs|dd\s+if=)\b/i
+      },
       {
         id: 'shell-command-chain',
         confidence: 0.80,
@@ -75,7 +80,12 @@ module.exports = {
       {
         id: 'pipe-operator-command',
         confidence: 0.80,
-        pattern: /\|\s*(?:ls|cat|whoami|id|pwd|dir|type)\b/i
+        pattern: /\|\s*(?:ls|cat|whoami|id|pwd|dir|type|nc|ncat|socat|tee)(?:\s|$)/i
+      },
+      {
+        id: 'pipe-to-dangerous-binary',
+        confidence: 0.75,
+        pattern: new RegExp(`\\|\\s*(?:${DANGEROUS_COMMANDS})(?:\\s|$)`, 'i')
       }
     ];
   }

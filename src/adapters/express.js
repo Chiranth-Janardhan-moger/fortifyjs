@@ -823,11 +823,16 @@ function expressMiddleware(options = {}) {
 
     if (schemaResult) {
       const attack = reportDetection(schemaResult.payload, schemaResult.detection);
-      if (!dryRun) return res.status(blockStatus).json({
-        error: 'Forbidden',
-        message: 'Malicious payload detected by fortifyjs',
-        details: { label: attack.label }
-      });
+      if (!dryRun) {
+        if (typeof options.onBlocked === 'function') {
+          return options.onBlocked(req, res, attack);
+        }
+        return res.status(blockStatus).json({
+          error: 'Forbidden',
+          message: 'Malicious payload detected by fortifyjs',
+          details: { label: attack.label }
+        });
+      }
     }
 
     const sources = [];
@@ -858,11 +863,16 @@ function expressMiddleware(options = {}) {
         reason: 'source_read_failed',
         matches: [{ id: 'source-read-failed', label: 'dos', confidence: 1 }]
       });
-      if (!dryRun) return res.status(blockStatus).json({
-        error: 'Forbidden',
-        message: 'Malicious payload detected by fortifyjs',
-        details: { label: attack.label }
-      });
+      if (!dryRun) {
+        if (typeof options.onBlocked === 'function') {
+          return options.onBlocked(req, res, attack);
+        }
+        return res.status(blockStatus).json({
+          error: 'Forbidden',
+          message: 'Malicious payload detected by fortifyjs',
+          details: { label: attack.label }
+        });
+      }
     }
 
     for (const [sourceName, source] of sources) {
@@ -879,11 +889,16 @@ function expressMiddleware(options = {}) {
       }
 
       if (attack) {
-        if (!dryRun) return res.status(blockStatus).json({
-          error: 'Forbidden',
-          message: 'Malicious payload detected by fortifyjs',
-          details: { label: attack.label }
-        });
+        if (!dryRun) {
+          if (typeof options.onBlocked === 'function') {
+            return options.onBlocked(req, res, attack);
+          }
+          return res.status(blockStatus).json({
+            error: 'Forbidden',
+            message: 'Malicious payload detected by fortifyjs',
+            details: { label: attack.label }
+          });
+        }
       }
       scannedSources.add(sourceName);
     }

@@ -80,6 +80,11 @@ function fileUploadShieldFactory(options = {}) {
       return false;
     }
 
+    if (filename.includes(':') || filename.includes('::$DATA')) {
+      block(res, next, 'Alternate Data Stream syntax or forbidden character in filename');
+      return false;
+    }
+
     const parts = filename.split('.');
     const ext = parts.length > 1 ? '.' + parts[parts.length - 1].toLowerCase() : '';
 

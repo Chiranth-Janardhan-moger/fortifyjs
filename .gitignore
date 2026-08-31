@@ -7,5 +7,10 @@ scratch/
 types-check.ts
 plan_future.md
 goal_command.md
+.agents/
 __tests__/
 test/
+test-*.js
+verify-claims.js
+fortify-dashboard/node_modules/
+fortify-dashboard/.next/

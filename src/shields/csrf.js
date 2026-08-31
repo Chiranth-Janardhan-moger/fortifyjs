@@ -9,7 +9,7 @@ const crypto = require('crypto');
  */
 module.exports = function createCsrfShield(options = {}) {
   const secret = options.secret || crypto.randomBytes(32).toString('hex');
-  if (!options.secret) {
+  if (!options.secret && process.env.NODE_ENV !== 'test' && !options.silent) {
     console.warn('fortifyjs: CSRF secret not provided. A random secret was generated, but it will not persist across restarts.');
   }
 
@@ -59,9 +59,15 @@ module.exports = function createCsrfShield(options = {}) {
     // We assume cookie-parser might not be present, so we do basic parsing
     let cookies = req.cookies || {};
     if (!req.cookies && req.headers.cookie) {
-      cookies = Object.fromEntries(
-        req.headers.cookie.split('; ').map(c => c.split('='))
-      );
+      cookies = {};
+      const pairs = req.headers.cookie.split(';');
+      for (const pair of pairs) {
+        const trimmed = pair.trim();
+        const idx = trimmed.indexOf('=');
+        if (idx !== -1) {
+          cookies[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
+        }
+      }
     }
 
     const currentSignedToken = cookies[cookieName];

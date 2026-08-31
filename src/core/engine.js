@@ -10,6 +10,7 @@ const nosqliDetector = require('../detectors/nosqli');
 const cmdiDetector = require('../detectors/cmdi');
 const pathTraversalDetector = require('../detectors/path-traversal');
 const ssrfDetector = require('../detectors/ssrf');
+const { isPrivateIpv4Number } = require('../detectors/ssrf');
 const xxeDetector = require('../detectors/xxe');
 const prototypePollutionDetector = require('../detectors/prototype-pollution');
 const hppDetector = require('../detectors/hpp');
@@ -18,6 +19,63 @@ const crlfDetector = require('../detectors/crlf');
 const templateInjectionDetector = require('../detectors/template-injection');
 const ldapDetector = require('../detectors/ldap');
 const graphqlDetector = require('../detectors/graphql');
+const promptInjectionDetector = require('../detectors/prompt-injection');
+
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+const ATOMIC_IDENTIFIER_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
+const NUMERIC_REGEX = /^-?\d+(?:\.\d+)?$/;
+
+const DANGEROUS_ATOMIC_IDENTIFIERS = new Set([
+  'SELECT', 'UNION', 'DROP', 'DELETE', 'INSERT', 'UPDATE', 'EXEC',
+  'TRUNCATE', 'ALTER', 'CREATE', 'MERGE', 'GRANT', 'REVOKE',
+  '__PROTO__', 'CONSTRUCTOR', 'PROTOTYPE',
+  '__SCHEMA', '__TYPE', '__TYPENAME',
+  'INFORMATION_SCHEMA', 'SQLITE_MASTER', 'SYSOBJECTS',
+  'LOCALHOST', 'SCRIPT', 'JAVASCRIPT', 'ALERT', 'EVAL'
+]);
+
+function isTriviallySafe(payload) {
+  if (typeof payload === 'number' || typeof payload === 'boolean') return true;
+  if (typeof payload !== 'string') return false;
+  if (payload.length === 0) return true;
+  if (payload.length > 128) return false;
+
+  // Single word identifier / slug
+  if (ATOMIC_IDENTIFIER_REGEX.test(payload)) {
+    const upper = payload.toUpperCase();
+    if (DANGEROUS_ATOMIC_IDENTIFIERS.has(upper)) {
+      return false;
+    }
+    // Check if hex integer (e.g. 0x7f000001)
+    if (/^0x[0-9a-fA-F]+$/i.test(payload)) {
+      return false;
+    }
+    // Check if decimal IP representation in private range
+    if (/^\d{8,10}$/.test(payload)) {
+      const num = Number(payload);
+      if (Number.isFinite(num) && isPrivateIpv4Number(num)) return false;
+    }
+    return true;
+  }
+
+  // Pure numeric
+  if (NUMERIC_REGEX.test(payload)) {
+    if (/^\d{8,10}$/.test(payload)) {
+      const num = Number(payload);
+      if (Number.isFinite(num) && isPrivateIpv4Number(num)) return false;
+    }
+    return true;
+  }
+
+  // Standard UUID
+  if (payload.length === 36 && UUID_REGEX.test(payload)) return true;
+
+  // Standard Email
+  if (payload.includes('@') && EMAIL_REGEX.test(payload)) return true;
+
+  return false;
+}
 
 function classifyInputType(payload) {
   const str = String(payload).trim();
@@ -52,7 +110,8 @@ class DetectionEngine {
       crlfDetector,
       templateInjectionDetector,
       ldapDetector,
-      graphqlDetector
+      graphqlDetector,
+      promptInjectionDetector
     ];
     this.behavioralAnalyzer = new BehavioralAnalyzer(options.behavioral || {});
     this.whitelist = new Whitelist();
@@ -72,6 +131,9 @@ class DetectionEngine {
   detect(payload, context = {}) {
     if (this.whitelist.isWhitelisted(payload)) {
       return { label: 'benign', confidence: 0, whitelisted: true };
+    }
+    if (this.detectors.length === 15 && this.options.fastPath !== false && isTriviallySafe(payload) && !context.source && this.options.mode !== 'query') {
+      return { label: 'benign', confidence: 0, scores: {}, matches: [], fastPath: true };
     }
     const variants = Normalizer.payloadVariants(payload, this.options);
     let allMatches = [];

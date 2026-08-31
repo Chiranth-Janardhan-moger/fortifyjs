@@ -144,10 +144,21 @@ function shield(tier = 'basic', overrides = {}) {
     stack.push(dashboardFactory(config.dashboard, logger));
   }
 
+  if (config.sanitize) {
+    const { sanitizerFactory } = require('./shields/sanitizer');
+    stack.push(sanitizerFactory(typeof config.sanitize === 'object' ? config.sanitize : {}));
+  }
+
   // Build detector
   const detectorOptions = {
     level: config.level,
-    behavioral: config.behavioral
+    behavioral: config.behavioral,
+    onBlocked: config.onBlocked,
+    allowRoutes: config.allowRoutes,
+    allowParams: config.allowParams,
+    routeLevels: config.routeLevels,
+    whitelist: config.whitelist,
+    mode: config.mode
   };
   
   // Note: We use expressMiddleware factory here
@@ -162,6 +173,13 @@ function shield(tier = 'basic', overrides = {}) {
   stack.push(detectorMiddleware);
 
   return function fortifyjsStack(req, res, next) {
+    if (config.allowRoutes && Array.isArray(config.allowRoutes)) {
+      const pathname = req.path || (req.url ? req.url.split('?')[0] : '');
+      if (config.allowRoutes.includes(pathname)) {
+        return next();
+      }
+    }
+
     let index = 0;
     function runNext(err) {
       if (err) return next(err);

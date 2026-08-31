@@ -68,9 +68,9 @@ class Normalizer {
         .replace(/\\x([0-9a-fA-F]{2})/g, decodeCodePoint)
         .replace(/&#x([0-9a-fA-F]+);?|&#(\d+);?/g, decodeEntity)
         .replace(NAMED_ENTITY_PATTERN, (match, name) => NAMED_ENTITIES[name.toLowerCase()] ?? match)
-        .replace(/[\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/g, ' ')
+        .replace(/[\x0B\x0C\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/g, ' ')
         .replace(/[\u200b-\u200d\ufeff]/g, '')
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        .replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
       try {
         normalized = normalized.normalize('NFKC');
       } catch (e) {}

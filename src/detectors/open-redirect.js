@@ -36,6 +36,16 @@ module.exports = {
         id: 'javascript-uri-redirect',
         confidence: 0.85,
         pattern: new RegExp(`(?:\\?|&)(?:${REDIRECT_PARAMS})=javascript:`, 'i')
+      },
+      {
+        id: 'bare-protocol-relative-url',
+        confidence: 0.70,
+        pattern: /^\/\/[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
+      },
+      {
+        id: 'bare-external-redirect',
+        confidence: 0.65,
+        pattern: /^https?:\/\/[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
       }
     ];
   }
