@@ -13,3 +13,6 @@ test/
 test-*.js
 verify-claims.js
 fortify-dashboard/
+paper.md
+paper.tex
+*.tex
